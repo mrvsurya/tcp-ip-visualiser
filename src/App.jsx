@@ -16,8 +16,6 @@ const TCPIPJourney = () => {
     sender: {
       srcMac: '00:1A:C2:7B:00:41',
       dstMac: '00:0C:29:4F:8B:32',
-      primaryNote: 'Source is the Sender; Destination is the Local Gateway.',
-      hopNote: 'The Source and Destination MAC addresses change with every hop from Sender to Gateway.',
       managedByApp: protocol === 'TCP' 
         ? 'Web Browser / App Software (Decides to use TCP for reliable data transfer)' 
         : 'Competitive Game Engine (Decides to use UDP for low-latency state synchronization)'
@@ -25,8 +23,6 @@ const TCPIPJourney = () => {
     receiver: {
       srcMac: 'E4:CE:8F:12:33:A1',
       dstMac: '70:8B:CD:4E:21:F5',
-      primaryNote: "Source is the Receiver's Gateway; Destination is the Receiver.",
-      hopNote: 'The Source and Destination MAC addresses change with every hop from Gateway to Receiver.',
       managedByApp: protocol === 'TCP' ? 'Web Server (Processes HTTP requests)' : 'Dedicated Game Server (Processes real-time state updates)'
     }
   };
@@ -54,7 +50,7 @@ const TCPIPJourney = () => {
         { label: 'Source Port', value: '52431' }, 
         { label: 'Dest Port', value: '80 (HTTP)' }, 
         { label: 'Seq Number', value: '101' }, 
-        { label: 'Flags', value: 'ACK, PSH' } 
+        { label: 'Checksum', value: '0x8F4E' } 
       ] : [ 
         { label: 'Source Port', value: '52431' }, 
         { label: 'Dest Port', value: '27015 (Game)' }, 
@@ -70,7 +66,8 @@ const TCPIPJourney = () => {
         { label: 'Source IP', value: '192.168.1.5' }, 
         { label: 'Dest IP', value: side === 'receiver' ? '192.168.1.10' : '172.217.194.94' }, 
         { label: 'Protocol', value: protocol === 'TCP' ? '6 (TCP)' : '17 (UDP)' }, 
-        { label: 'TTL', value: '64' } 
+        { label: 'TTL', value: side === 'sender' ? '64' : '58' },
+        { label: 'Header Checksum', value: side === 'sender' ? '0x4B21' : '0x4E27' } 
       ] 
     },
     { 
@@ -123,7 +120,7 @@ const TCPIPJourney = () => {
         
         {/* Header Controls */}
         <div className="p-6 border-b flex flex-wrap gap-6 justify-between items-center bg-white relative z-50">
-          <div>
+          <div className="text-left">
             <h1 className="text-2xl font-bold text-slate-800 tracking-tight text-left">TCP/IP Protocol Journey</h1>
             <p className="text-sm text-slate-500 font-medium text-left">Visualising Data Encapsulation and Decapsulation</p>
           </div>
@@ -207,7 +204,7 @@ const TCPIPJourney = () => {
             <div className="absolute inset-0 z-[100] flex items-center justify-center p-4 pointer-events-none bg-slate-900/10">
               <div className={`rounded-xl shadow-2xl w-full max-w-2xl flex flex-col border-4 border-yellow-400 pointer-events-auto animate-in fade-in zoom-in duration-200 max-h-[90%] ${inspectSource === 'sender' ? 'bg-blue-50' : 'bg-green-50'}`}>
                 <div className="bg-yellow-400 p-4 flex justify-between items-center shrink-0 z-[110]">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 text-left">
                     <h2 className="font-black text-slate-900 uppercase tracking-tight">Packet Header Inspector</h2>
                     <span className={`px-2 py-0.5 text-[8px] font-black rounded-full uppercase text-white ${inspectSource === 'sender' ? 'bg-blue-600' : 'bg-green-700'}`}>{inspectSource} Snapshot</span>
                   </div>
@@ -236,9 +233,14 @@ const TCPIPJourney = () => {
                             </div>
                           ))}
                         </div>
-                        {l.name === 'Internet' && inspectSource === 'receiver' && clickedLayerIndex === 2 && (
-                          <div className="mt-3 p-1.5 bg-green-50 border border-green-200 rounded text-left">
-                            <p className="text-[9px] font-bold text-green-800 text-left">After reviewing the IP header, the Internet layer dispatches the data to the correct Transport stack based on the Protocol ID.</p>
+                        {l.name === 'Internet' && inspectSource === 'receiver' && (
+                          <div className="mt-3 p-2 bg-amber-50 border border-amber-200 rounded text-left space-y-1">
+                            <p className="text-[8px] font-bold text-amber-800">
+                              Note: The TTL has been decremented (64 → 58) to simulate traversal through multiple routers. This triggered a recalculation of the Header Checksum.
+                            </p>
+                            <p className="text-[8px] font-bold text-blue-800 italic">
+                              After reviewing the IP header, the Internet layer dispatches the data to the correct Transport stack based on the Protocol ID.
+                            </p>
                           </div>
                         )}
                       </div>
